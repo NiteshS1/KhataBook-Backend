@@ -2,33 +2,38 @@ import mongoose from 'mongoose';
 
 const stockSchema = new mongoose.Schema(
   {
-    itemName: {
+    productName: {
       type: String,
-      required: [true, 'Please add an item name'],
+      required: [true, 'Please add stock name'],
       trim: true,
+      unique: true
     },
     quantity: {
       type: Number,
       required: [true, 'Please add quantity'],
-      min: [0, 'Quantity cannot be negative'],
+      min: 0
     },
-    pricePerItem: {
+    price: {
       type: Number,
-      required: [true, 'Please add price per item'],
-      min: [0, 'Price cannot be negative'],
+      required: [true, 'Please add price'],
+      min: 0
     },
     description: {
       type: String,
-      trim: true,
+      trim: true
     },
     user: {
       type: mongoose.Schema.Types.ObjectId,
       ref: 'User',
-      required: true,
+      required: true
     },
+    lastUpdated: {
+      type: Date,
+      default: Date.now
+    }
   },
   {
-    timestamps: true,
+    timestamps: true
   }
 );
 

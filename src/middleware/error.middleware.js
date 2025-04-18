@@ -3,13 +3,34 @@ import { logger } from '../utils/logger.js';
 export const errorHandler = (err, req, res, next) => {
   logger.error(err.stack);
 
-  const statusCode = err.statusCode || 500;
-  const message = err.message || 'Internal Server Error';
+  // Handle Zod validation errors
+  if (err.name === 'ZodError') {
+    return res.status(400).json({
+      success: false,
+      error: err.errors
+    });
+  }
 
-  res.status(statusCode).json({
+  // Handle duplicate key errors
+  if (err.code === 11000) {
+    return res.status(400).json({
+      success: false,
+      error: 'Duplicate field value entered'
+    });
+  }
+
+  // Handle Mongoose validation errors
+  if (err.name === 'ValidationError') {
+    const messages = Object.values(err.errors).map(val => val.message);
+    return res.status(400).json({
+      success: false,
+      error: messages
+    });
+  }
+
+  // Default error
+  res.status(500).json({
     success: false,
-    statusCode,
-    message,
-    ...(process.env.NODE_ENV === 'development' && { stack: err.stack }),
+    error: 'Internal server error'
   });
 }; 

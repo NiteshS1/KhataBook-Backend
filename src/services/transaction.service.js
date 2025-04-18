@@ -1,21 +1,137 @@
-import { BaseService } from './base.service.js';
-import { TransactionRepository } from '../repositories/transaction.repository.js';
+import {
+  create,
+  find,
+  findById,
+  findByIdAndUpdate,
+  findByIdAndDelete
+} from '../repositories/transaction.repository.js';
 import { logger } from '../utils/logger.js';
 
-export class TransactionService extends BaseService {
-  constructor() {
-    super(new TransactionRepository());
+export const createTransaction = async (data) => {
+  try {
+    const transaction = await create(data);
+    return {
+      success: true,
+      data: transaction
+    };
+  } catch (error) {
+    logger.error('Create transaction service error:', error);
+    throw error;
   }
+};
 
-  async createTransaction(transactionData) {
-    try {
-      return this.create(transactionData);
-    } catch (error) {
-      logger.error('Error creating transaction:', error);
-      throw error;
+export const getTransactions = async (userId, startDate = null) => {
+  try {
+    const query = { userId };
+    
+    if (startDate) {
+      query.date = { $gte: startDate };
     }
-  }
 
+    const transactions = await find(query);
+    return {
+      success: true,
+      data: transactions
+    };
+  } catch (error) {
+    logger.error('Get transactions service error:', error);
+    throw error;
+  }
+};
+
+export const getTransaction = async (id) => {
+  try {
+    const transaction = await findById(id);
+    if (!transaction) {
+      return {
+        success: false,
+        error: 'Transaction not found'
+      };
+    }
+    return {
+      success: true,
+      data: transaction
+    };
+  } catch (error) {
+    logger.error('Get transaction service error:', error);
+    throw error;
+  }
+};
+
+export const updateTransaction = async (id, data) => {
+  try {
+    const transaction = await findByIdAndUpdate(id, data, { new: true });
+    if (!transaction) {
+      return {
+        success: false,
+        error: 'Transaction not found'
+      };
+    }
+    return {
+      success: true,
+      data: transaction
+    };
+  } catch (error) {
+    logger.error('Update transaction service error:', error);
+    throw error;
+  }
+};
+
+export const deleteTransaction = async (id) => {
+  try {
+    const transaction = await findByIdAndDelete(id);
+    if (!transaction) {
+      return {
+        success: false,
+        error: 'Transaction not found'
+      };
+    }
+    return {
+      success: true,
+      data: transaction
+    };
+  } catch (error) {
+    logger.error('Delete transaction service error:', error);
+    throw error;
+  }
+};
+
+export const getTransactionsByDateRange = async (userId, startDate, endDate) => {
+  try {
+    const transactions = await find({
+      userId,
+      date: {
+        $gte: startDate,
+        $lte: endDate
+      }
+    });
+    return {
+      success: true,
+      data: transactions
+    };
+  } catch (error) {
+    logger.error('Get transactions by date range service error:', error);
+    throw error;
+  }
+};
+
+export const getTransactionsByType = async (userId, type) => {
+  try {
+    const transactions = await find({
+      userId,
+      type
+    });
+    return {
+      success: true,
+      data: transactions
+    };
+  } catch (error) {
+    logger.error('Get transactions by type service error:', error);
+    throw error;
+  }
+};
+
+export class TransactionService {
   async getUserTransactions(userId) {
     try {
       return this.repository.findByUserId(userId);
@@ -54,15 +170,15 @@ export class TransactionService extends BaseService {
 
   async getTransactionSummary(userId) {
     try {
-      const [income, expense] = await Promise.all([
-        this.getTotalAmountByType(userId, 'income'),
-        this.getTotalAmountByType(userId, 'expense')
+      const [paid, unpaid] = await Promise.all([
+        this.getTotalAmountByType(userId, 'paid'),
+        this.getTotalAmountByType(userId, 'unpaid')
       ]);
 
       return {
-        income,
-        expense,
-        balance: income - expense
+        paid,
+        unpaid,
+        balance: paid - unpaid
       };
     } catch (error) {
       logger.error('Error getting transaction summary:', error);

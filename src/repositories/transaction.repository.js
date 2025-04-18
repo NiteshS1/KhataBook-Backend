@@ -1,31 +1,47 @@
-import { BaseRepository } from './base.repository.js';
-import { Transaction } from '../models/transaction.model.js';
+import Transaction from '../models/transaction.model.js';
 
-export class TransactionRepository extends BaseRepository {
-  constructor() {
-    super(Transaction);
-  }
+export const create = async (data) => {
+  return await Transaction.create(data);
+};
 
-  async findByUserId(userId) {
-    return this.find({ user: userId });
-  }
+export const find = async (query) => {
+  return await Transaction.find(query);
+};
 
-  async findByDateRange(userId, startDate, endDate) {
-    return this.find({
-      user: userId,
-      date: {
-        $gte: startDate,
-        $lte: endDate
-      }
-    });
-  }
+export const findById = async (id) => {
+  return await Transaction.findById(id);
+};
 
-  async findByType(userId, type) {
-    return this.find({ user: userId, type });
-  }
+export const findByIdAndUpdate = async (id, data) => {
+  return await Transaction.findByIdAndUpdate(id, data, { new: true });
+};
 
-  async getTotalAmount(userId, type) {
-    const transactions = await this.find({ user: userId, type });
-    return transactions.reduce((sum, transaction) => sum + transaction.amount, 0);
-  }
-} 
+export const findByIdAndDelete = async (id) => {
+  return await Transaction.findByIdAndDelete(id);
+};
+
+export const findByUserId = async (userId) => {
+  return await Transaction.find({ user: userId });
+};
+
+export const findByDateRange = async (userId, startDate, endDate) => {
+  return await Transaction.find({
+    user: userId,
+    date: {
+      $gte: startDate,
+      $lte: endDate
+    }
+  });
+};
+
+export const findByType = async (userId, type) => {
+  return await Transaction.find({ user: userId, type });
+};
+
+export const getTotalAmount = async (userId, type) => {
+  const result = await Transaction.aggregate([
+    { $match: { user: userId, type } },
+    { $group: { _id: null, total: { $sum: '$amount' } } }
+  ]);
+  return result[0]?.total || 0;
+}; 

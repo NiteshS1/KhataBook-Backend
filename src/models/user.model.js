@@ -19,20 +19,11 @@ const userSchema = new mongoose.Schema(
       type: String,
       required: [true, 'Please add a password'],
       minlength: 6,
-      select: false,
     },
     phone: {
       type: String,
-      trim: true,
-    },
-    address: {
-      type: String,
-      trim: true,
-    },
-    role: {
-      type: String,
-      enum: ['user', 'admin'],
-      default: 'user',
+      required: [true, 'Please add a phone number'],
+      unique: true,
     },
   },
   {
@@ -55,4 +46,4 @@ userSchema.methods.matchPassword = async function (enteredPassword) {
   return await bcrypt.compare(enteredPassword, this.password);
 };
 
-export const User = mongoose.model('User', userSchema); 
+export default mongoose.model('User', userSchema); 

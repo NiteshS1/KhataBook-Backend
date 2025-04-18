@@ -1,69 +1,114 @@
-import { BaseService } from './base.service.js';
-import { StockRepository } from '../repositories/stock.repository.js';
+import { Stock } from '../models/stock.model.js';
 import { logger } from '../utils/logger.js';
 
-export class StockService extends BaseService {
-  constructor() {
-    super(new StockRepository());
+export const createStock = async (data) => {
+  try {
+    const stock = await Stock.create(data);
+    return {
+      success: true,
+      data: stock
+    };
+  } catch (error) {
+    logger.error('Create stock service error:', error);
+    throw error;
   }
+};
 
-  async addStock(stockData) {
-    try {
-      const existingStock = await this.repository.findByProductName(stockData.productName);
-      
-      if (existingStock) {
-        // Update existing stock
-        return this.repository.updateStockQuantity(
-          existingStock._id,
-          existingStock.quantity + stockData.quantity
-        );
-      }
-      
-      // Create new stock entry
-      return this.create(stockData);
-    } catch (error) {
-      logger.error('Error adding stock:', error);
-      throw error;
+export const updateStock = async (id, data) => {
+  try {
+    const stock = await Stock.findByIdAndUpdate(id, data, { new: true });
+    if (!stock) {
+      return {
+        success: false,
+        error: 'Stock not found'
+      };
     }
+    return {
+      success: true,
+      data: stock
+    };
+  } catch (error) {
+    logger.error('Update stock service error:', error);
+    throw error;
   }
+};
 
-  async removeStock(productName, quantity) {
-    try {
-      const stock = await this.repository.findByProductName(productName);
-      
-      if (!stock) {
-        throw new Error('Product not found in stock');
-      }
-      
-      if (stock.quantity < quantity) {
-        throw new Error('Insufficient stock quantity');
-      }
-      
-      return this.repository.updateStockQuantity(
-        stock._id,
-        stock.quantity - quantity
-      );
-    } catch (error) {
-      logger.error('Error removing stock:', error);
-      throw error;
+export const getStock = async (id) => {
+  try {
+    const stock = await Stock.findById(id);
+    if (!stock) {
+      return {
+        success: false,
+        error: 'Stock not found'
+      };
     }
+    return {
+      success: true,
+      data: stock
+    };
+  } catch (error) {
+    logger.error('Get stock service error:', error);
+    throw error;
   }
+};
 
-  async getLowStockProducts(threshold = 10) {
-    try {
-      return this.repository.findLowStock(threshold);
-    } catch (error) {
-      logger.error('Error getting low stock products:', error);
-      throw error;
-    }
+export const getAllStocks = async (userId) => {
+  try {
+    const stocks = await Stock.find({ user: userId });
+    return {
+      success: true,
+      data: stocks
+    };
+  } catch (error) {
+    logger.error('Get all stocks service error:', error);
+    throw error;
   }
+};
 
-  async getExpiredProducts() {
-    try {
-      return this.repository.findExpiredProducts();
-    } catch (error) {
-      logger.error('Error getting expired products:', error);
-      throw error;
+export const deleteStock = async (id) => {
+  try {
+    const stock = await Stock.findByIdAndDelete(id);
+    if (!stock) {
+      return {
+        success: false,
+        error: 'Stock not found'
+      };
     }
+    return {
+      success: true,
+      data: stock
+    };
+  } catch (error) {
+    logger.error('Delete stock service error:', error);
+    throw error;
   }
-} 
+};
+
+export const updateStockQuantity = async (id, quantity) => {
+  try {
+    const stock = await Stock.findById(id);
+    if (!stock) {
+      return {
+        success: false,
+        error: 'Stock not found'
+      };
+    }
+
+    stock.quantity += quantity;
+    if (stock.quantity < 0) {
+      return {
+        success: false,
+        error: 'Insufficient stock quantity'
+      };
+    }
+
+    await stock.save();
+    return {
+      success: true,
+      data: stock
+    };
+  } catch (error) {
+    logger.error('Update stock quantity service error:', error);
+    throw error;
+  }
+}; 

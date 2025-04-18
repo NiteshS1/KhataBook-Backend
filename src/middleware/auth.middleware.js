@@ -1,25 +1,52 @@
-import { verifyToken } from '../utils/jwt.js';
+import jwt from 'jsonwebtoken';
 import { logger } from '../utils/logger.js';
+import { findById } from '../repositories/user.repository.js';
 
-export const authenticate = async (req, res, next) => {
+export const protect = async (req, res, next) => {
   try {
-    const token = req.headers.authorization?.split(' ')[1];
+    let token;
 
+    // Get token from header
+    if (req.headers.authorization && req.headers.authorization.startsWith('Bearer')) {
+      token = req.headers.authorization.split(' ')[1];
+    }
+
+    // Check if token exists
     if (!token) {
       return res.status(401).json({
         success: false,
-        error: 'No token provided'
+        error: 'Not authorized to access this route'
       });
     }
 
-    const decoded = verifyToken(token);
-    req.user = decoded;
-    next();
+    try {
+      // Verify token
+      const decoded = jwt.verify(token, process.env.JWT_SECRET);
+
+      // Get user from token
+      const user = await findById(decoded.id);
+
+      if (!user) {
+        return res.status(401).json({
+          success: false,
+          error: 'User not found'
+        });
+      }
+
+      // Add user to request object
+      req.user = user;
+      next();
+    } catch (error) {
+      return res.status(401).json({
+        success: false,
+        error: 'Not authorized to access this route'
+      });
+    }
   } catch (error) {
-    logger.error('Authentication error:', error);
-    res.status(401).json({
+    logger.error('Auth middleware error:', error);
+    res.status(500).json({
       success: false,
-      error: 'Invalid token'
+      error: 'Internal server error'
     });
   }
 }; 

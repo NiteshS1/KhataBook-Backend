@@ -9,6 +9,7 @@ import { errorHandler } from './middleware/error.middleware.js';
 import userRoutes from './routes/user.routes.js';
 import stockRoutes from './routes/stock.routes.js';
 import transactionRoutes from './routes/transaction.routes.js';
+import orderRoutes from './routes/order.routes.js';
 import { logger } from './utils/logger.js';
 
 // Load environment variables
@@ -46,6 +47,7 @@ class App {
     this.app.use('/api/users', userRoutes);
     this.app.use('/api/stocks', stockRoutes);
     this.app.use('/api/transactions', transactionRoutes);
+    this.app.use('/api/orders', orderRoutes);
   }
 
   initializeErrorHandling() {
